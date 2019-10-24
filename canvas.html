@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>画布</title>
+    <style>
+        canvas{
+            background-color: pink;
+        }
+    </style>
+</head>
+<body>
+    <canvas width="800px" height="500px"></canvas>
+    <button>重新绘制</button>
+</body>
+<script>
+    // 创建一个websocket对象
+    var ws = new WebSocket("ws://localhost:8080/");
+    // 监听客户端是否成功连接
+    ws.onopen = function(e){
+        console.log("客户端连接成功")
+    }
+
+    var clear = document.querySelector("button");
+    // canvas基础用法
+    var canvas = document.querySelector("canvas");
+    // 创建2d画布
+    var context = canvas.getContext("2d");
+    // 开始划线
+    // context.beginPath();
+    // 起点
+    // context.moveTo(0,0);
+    // 终点
+    // context.lineTo(400,250);
+    // context.lineTo(800,0);
+    // 画笔
+    // context.stroke();
+    // 结束划线
+    // context.closePath();
+
+    // 画笔宽度
+    context.lineWidth = 30;
+    // 线与线相交成圆
+    context.lineCap="round";
+    // 线设置为圆状
+    context.lineJoin="round";
+    // 颜色
+    // context.fillStyle = "white";
+    context.strokeStyle = "white";
+    // 所有连接该服务器的同时具备属性
+    ws.onmessage = function(e){
+        var point = JSON.parse(e.data);
+        if(point.flag == "s"){
+            context.beginPath();
+            context.moveTo(point.x,point.y);
+        }else if(point.flag =="e" ){
+            context.lineTo(point.x,point.y);
+            context.stroke();
+        }else if(point.flag == "r"){
+            window.location.reload();
+        }
+    }
+    // 画图
+    canvas.onmousedown = function(e){
+        // context.beginPath();
+        // context.moveTo(e.layerX,e.layerY);
+        ws.send(JSON.stringify({flag:"s",x:e.layerX,y:e.layerY}));
+        document.onmousemove = function(e){
+            ws.send(JSON.stringify({flag:"e",x:e.layerX,y:e.layerY}));
+            // context.lineTo(e.layerX,e.layerY);
+            // context.fill();
+            // context.stroke();
+        }
+        context.closePath();
+        document.onmouseup = function(e){
+            document.onmousemove =null;
+            document.onmousedown =null;
+        }
+    }
+    // 重置绘图
+    clear.onclick = function(){
+        ws.send(JSON.stringify({flag:"r"}));
+    }
+</script>
+</html>
